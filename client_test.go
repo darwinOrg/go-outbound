@@ -19,40 +19,6 @@ func initClient() {
 	}
 }
 
-func TestStartJob(t *testing.T) {
-	initClient()
-	ctx := &dgctx.DgContext{TraceId: "123"}
-
-	err := dgob.StartJob(ctx, &dgob.StartJobRequest{
-		InstanceId: os.Getenv("INSTANCE_ID"),
-		JobGroupId: os.Getenv("JOB_GROUP_ID"),
-		Jobs: []*dgob.Job{
-			{
-				Contacts: []*dgob.Contact{
-					{
-						Name:        "飘歌",
-						PhoneNumber: "15901431753",
-						ReferenceId: "01",
-					},
-				},
-				Extras: []*dgob.KeyValuePair{
-					{
-						Key:   "companyName",
-						Value: "腾讯",
-					},
-					{
-						Key:   "expiredAt",
-						Value: "2024-08-16 23:59:59",
-					},
-				},
-			},
-		},
-	})
-	if err != nil {
-		panic(err)
-	}
-}
-
 func TestAssignJobs(t *testing.T) {
 	initClient()
 	ctx := &dgctx.DgContext{TraceId: "123"}

@@ -21,14 +21,6 @@ type OutBoundConfig struct {
 	Endpoint        string
 }
 
-type StartJobRequest struct {
-	InstanceId string
-	JobGroupId string
-	Jobs       []*Job
-	ScenarioId string
-	ScriptId   string
-}
-
 type AssignJobsRequest struct {
 	InstanceId string
 	JobGroupId string
@@ -64,36 +56,6 @@ func InitClient(cfg *OutBoundConfig) error {
 	var err error
 	obClient, err = outboundbot20191226.NewClient(config)
 	return err
-}
-
-func StartJob(ctx *dgctx.DgContext, req *StartJobRequest) error {
-	sjr := &outboundbot20191226.StartJobRequest{
-		InstanceId: tea.String(req.InstanceId),
-		JobGroupId: tea.String(req.JobGroupId),
-		JobJson:    tea.String(utils.MustConvertBeanToJsonString(req.Jobs)),
-	}
-	if req.ScenarioId != "" {
-		sjr.ScenarioId = tea.String(req.ScenarioId)
-	}
-	if req.ScriptId != "" {
-		sjr.ScriptId = tea.String(req.ScriptId)
-	}
-
-	resp, err := obClient.StartJob(sjr)
-	if err != nil {
-		recommend := extractRecommend(err)
-		dglogger.Errorf(ctx, "outbound start job error | request: %+v | err: %v | recommend: %s", sjr, err, recommend)
-		return err
-	}
-	if resp == nil {
-		return dgerr.SYSTEM_ERROR
-	}
-	if *resp.StatusCode != 200 {
-		dglogger.Errorf(ctx, "outbound start job error | request: %+v | response: %+v", sjr, resp)
-		return dgerr.NewDgError(int(*resp.StatusCode), *resp.Body.Message)
-	}
-
-	return nil
 }
 
 func AssignJobs(ctx *dgctx.DgContext, req *AssignJobsRequest) error {
