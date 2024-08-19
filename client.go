@@ -10,6 +10,7 @@ import (
 	dgcoll "github.com/darwinOrg/go-common/collection"
 	dgctx "github.com/darwinOrg/go-common/context"
 	dgerr "github.com/darwinOrg/go-common/enums/error"
+	"github.com/darwinOrg/go-common/model"
 	"github.com/darwinOrg/go-common/utils"
 	dglogger "github.com/darwinOrg/go-logger"
 	"strings"
@@ -28,8 +29,8 @@ type AssignJobsRequest struct {
 }
 
 type Job struct {
-	Contacts []*Contact      `json:"contacts"`
-	Extras   []*KeyValuePair `json:"extras"`
+	Contacts []*Contact                            `json:"contacts"`
+	Extras   []*model.KeyValuePair[string, string] `json:"extras"`
 }
 
 type Contact struct {
@@ -37,11 +38,6 @@ type Contact struct {
 	PhoneNumber string `json:"phonenumber"`
 	ReferenceId string `json:"referenceId"`
 	Honorific   string `json:"honorific,omitempty"`
-}
-
-type KeyValuePair struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
 }
 
 var obClient *outboundbot20191226.Client

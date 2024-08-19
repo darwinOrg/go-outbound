@@ -2,6 +2,7 @@ package dgob_test
 
 import (
 	dgctx "github.com/darwinOrg/go-common/context"
+	"github.com/darwinOrg/go-common/model"
 	dgob "github.com/darwinOrg/go-outbound"
 	"os"
 	"testing"
@@ -35,7 +36,7 @@ func TestAssignJobs(t *testing.T) {
 						ReferenceId: "01",
 					},
 				},
-				Extras: []*dgob.KeyValuePair{
+				Extras: []*model.KeyValuePair[string, string]{
 					{
 						Key:   "companyName",
 						Value: "腾讯",
