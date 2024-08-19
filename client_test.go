@@ -3,6 +3,8 @@ package dgob_test
 import (
 	dgctx "github.com/darwinOrg/go-common/context"
 	"github.com/darwinOrg/go-common/model"
+	"github.com/darwinOrg/go-common/utils"
+	dglogger "github.com/darwinOrg/go-logger"
 	dgob "github.com/darwinOrg/go-outbound"
 	"os"
 	"testing"
@@ -24,7 +26,7 @@ func TestAssignJobs(t *testing.T) {
 	initClient()
 	ctx := &dgctx.DgContext{TraceId: "123"}
 
-	err := dgob.AssignJobs(ctx, &dgob.AssignJobsRequest{
+	jobIds, err := dgob.AssignJobs(ctx, &dgob.AssignJobsRequest{
 		InstanceId: os.Getenv("INSTANCE_ID"),
 		JobGroupId: os.Getenv("JOB_GROUP_ID"),
 		Jobs: []*dgob.Job{
@@ -52,4 +54,6 @@ func TestAssignJobs(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+
+	dglogger.Infof(ctx, "jobIds: %v", utils.MustConvertBeanToJsonString(jobIds))
 }

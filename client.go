@@ -54,7 +54,7 @@ func InitClient(cfg *OutBoundConfig) error {
 	return err
 }
 
-func AssignJobs(ctx *dgctx.DgContext, req *AssignJobsRequest) error {
+func AssignJobs(ctx *dgctx.DgContext, req *AssignJobsRequest) ([]string, error) {
 	ajr := &outboundbot20191226.AssignJobsRequest{
 		InstanceId: tea.String(req.InstanceId),
 		JobGroupId: tea.String(req.JobGroupId),
@@ -67,17 +67,18 @@ func AssignJobs(ctx *dgctx.DgContext, req *AssignJobsRequest) error {
 	if err != nil {
 		recommend := extractRecommend(err)
 		dglogger.Errorf(ctx, "outbound assign jobs error | request: %+v | err: %v | recommend: %s", ajr, err, recommend)
-		return err
+		return nil, err
 	}
 	if resp == nil {
-		return dgerr.SYSTEM_ERROR
+		return nil, dgerr.SYSTEM_ERROR
 	}
 	if *resp.StatusCode != 200 {
 		dglogger.Errorf(ctx, "outbound assign jobs error | request: %+v | response: %+v", ajr, resp)
-		return dgerr.NewDgError(int(*resp.StatusCode), *resp.Body.Message)
+		return nil, dgerr.NewDgError(int(*resp.StatusCode), *resp.Body.Message)
 	}
 
-	return nil
+	jobIds := dgcoll.MapToList(resp.Body.JobsId, func(jobId *string) string { return tea.StringValue(jobId) })
+	return jobIds, nil
 }
 
 func extractRecommend(err error) string {
