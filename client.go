@@ -22,6 +22,12 @@ type OutBoundConfig struct {
 	Endpoint        string
 }
 
+type CreateJobGroupRequest struct {
+	InstanceId   string `json:"InstanceId"`
+	ScenarioId   string `json:"ScenarioId"`
+	JobGroupName string `json:"JobGroupName"`
+}
+
 type AssignJobsRequest struct {
 	InstanceId string
 	JobGroupId string
@@ -54,6 +60,28 @@ func InitClient(cfg *OutBoundConfig) error {
 	return err
 }
 
+func CreateJobGroup(ctx *dgctx.DgContext, req *CreateJobGroupRequest) (string, error) {
+	resp, err := obClient.CreateJobGroup(&outboundbot20191226.CreateJobGroupRequest{
+		InstanceId:   &req.InstanceId,
+		ScenarioId:   &req.ScenarioId,
+		JobGroupName: &req.JobGroupName,
+	})
+	if err != nil {
+		recommend := extractRecommend(err)
+		dglogger.Errorf(ctx, "outbound create job group error | request: %+v | err: %v | recommend: %s", req, err, recommend)
+		return "", err
+	}
+	if resp == nil {
+		return "", dgerr.SYSTEM_ERROR
+	}
+	if *resp.StatusCode != 200 {
+		dglogger.Errorf(ctx, "outbound create job group error | request: %+v | response: %+v", req, resp)
+		return "", dgerr.NewDgError(int(*resp.StatusCode), *resp.Body.Message)
+	}
+
+	return *resp.Body.JobGroup.JobGroupId, nil
+}
+
 func AssignJobs(ctx *dgctx.DgContext, req *AssignJobsRequest) ([]string, error) {
 	ajr := &outboundbot20191226.AssignJobsRequest{
 		InstanceId: tea.String(req.InstanceId),
@@ -66,7 +94,7 @@ func AssignJobs(ctx *dgctx.DgContext, req *AssignJobsRequest) ([]string, error) 
 	resp, err := obClient.AssignJobsWithOptions(ajr, &util.RuntimeOptions{})
 	if err != nil {
 		recommend := extractRecommend(err)
-		dglogger.Errorf(ctx, "outbound assign jobs error | request: %+v | err: %v | recommend: %s", ajr, err, recommend)
+		dglogger.Errorf(ctx, "outbound assign jobs error | request: %+v | err: %v | recommend: %s", req, err, recommend)
 		return nil, err
 	}
 	if resp == nil {

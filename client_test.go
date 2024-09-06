@@ -1,6 +1,7 @@
 package dgob_test
 
 import (
+	"fmt"
 	dgctx "github.com/darwinOrg/go-common/context"
 	"github.com/darwinOrg/go-common/model"
 	"github.com/darwinOrg/go-common/utils"
@@ -20,6 +21,22 @@ func initClient() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func TestCreateJobGroup(t *testing.T) {
+	initClient()
+	ctx := &dgctx.DgContext{TraceId: "123"}
+
+	jobGroupId, err := dgob.CreateJobGroup(ctx, &dgob.CreateJobGroupRequest{
+		InstanceId:   os.Getenv("INSTANCE_ID"),
+		ScenarioId:   os.Getenv("SCENARIO_ID"),
+		JobGroupName: fmt.Sprintf("测试任务名称_%d", time.Now().UnixMilli()),
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	dglogger.Infof(ctx, "jobGroupId: %s", jobGroupId)
 }
 
 func TestAssignJobs(t *testing.T) {
@@ -46,6 +63,10 @@ func TestAssignJobs(t *testing.T) {
 					{
 						Key:   "expiredAt",
 						Value: time.Now().Add(time.Hour * 24 * 3).Format("2006-01-02 15:04:05"),
+					},
+					{
+						Key:   "jobTitle",
+						Value: "架构师",
 					},
 				},
 			},
