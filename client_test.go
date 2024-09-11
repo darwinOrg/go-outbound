@@ -78,3 +78,19 @@ func TestAssignJobs(t *testing.T) {
 
 	dglogger.Infof(ctx, "jobIds: %v", utils.MustConvertBeanToJsonString(jobIds))
 }
+
+func TestQueryJobWithResult(t *testing.T) {
+	initClient()
+	ctx := &dgctx.DgContext{TraceId: "123"}
+
+	resp, err := dgob.QueryJobWithResult(ctx, &dgob.QueryJobWithResultRequest{
+		InstanceId: os.Getenv("INSTANCE_ID"),
+		JobGroupId: os.Getenv("JOB_GROUP_ID"),
+		JobId:      os.Getenv("JOB_ID"),
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	dglogger.Infof(ctx, "resp: %v", utils.MustConvertBeanToJsonString(resp))
+}
