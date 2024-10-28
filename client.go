@@ -23,9 +23,16 @@ type OutBoundConfig struct {
 }
 
 type CreateJobGroupRequest struct {
-	InstanceId   string `json:"InstanceId"`
-	ScenarioId   string `json:"ScenarioId"`
-	JobGroupName string `json:"JobGroupName"`
+	InstanceId   string
+	ScenarioId   string
+	JobGroupName string
+}
+
+type ModifyJobGroupRequest struct {
+	InstanceId     string
+	JobGroupId     string
+	JobGroupStatus string
+	MinConcurrency int64
 }
 
 type AssignJobsRequest struct {
@@ -104,6 +111,49 @@ func CreateJobGroup(ctx *dgctx.DgContext, req *CreateJobGroupRequest) (string, e
 	}
 
 	return *resp.Body.JobGroup.JobGroupId, nil
+}
+
+func ModifyJobGroup(ctx *dgctx.DgContext, req *ModifyJobGroupRequest) error {
+	resp1, err := obClient.DescribeJobGroup(&outboundbot20191226.DescribeJobGroupRequest{
+		InstanceId: tea.String(req.InstanceId),
+		JobGroupId: tea.String(req.JobGroupId),
+	})
+	if err != nil {
+		recommend := extractRecommend(err)
+		dglogger.Errorf(ctx, "outbound modify job group error | request: %+v | err: %v | recommend: %s", req, err, recommend)
+		return err
+	}
+
+	modifyRequest := &outboundbot20191226.ModifyJobGroupRequest{
+		CallingNumber:      resp1.Body.JobGroup.CallingNumbers,
+		Description:        resp1.Body.JobGroup.JobGroupDescription,
+		InstanceId:         tea.String(req.InstanceId),
+		JobGroupId:         resp1.Body.JobGroup.JobGroupId,
+		JobGroupStatus:     tea.String(req.JobGroupStatus),
+		MinConcurrency:     tea.Int64(req.MinConcurrency),
+		Name:               resp1.Body.JobGroup.JobGroupName,
+		Priority:           resp1.Body.JobGroup.Priority,
+		RecallStrategyJson: tea.String(utils.MustConvertBeanToJsonString(resp1.Body.JobGroup.RecallStrategy)),
+		RingingDuration:    resp1.Body.JobGroup.RingingDuration,
+		ScenarioId:         resp1.Body.JobGroup.ScenarioId,
+		ScriptId:           resp1.Body.JobGroup.ScriptId,
+		//StrategyJson:       tea.String(utils.MustConvertBeanToJsonString(resp1.Body.JobGroup.Strategy)),
+	}
+	resp2, err := obClient.ModifyJobGroup(modifyRequest)
+	if err != nil {
+		recommend := extractRecommend(err)
+		dglogger.Errorf(ctx, "outbound create job group error | request: %+v | err: %v | recommend: %s", req, err, recommend)
+		return err
+	}
+	if resp2 == nil {
+		return dgerr.SYSTEM_ERROR
+	}
+	if *resp2.StatusCode != 200 {
+		dglogger.Errorf(ctx, "outbound create job group error | request: %+v | response: %+v", req, resp2)
+		return dgerr.NewDgError(int(*resp2.StatusCode), *resp2.Body.Message)
+	}
+
+	return nil
 }
 
 func AssignJobs(ctx *dgctx.DgContext, req *AssignJobsRequest) ([]string, error) {

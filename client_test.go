@@ -94,3 +94,18 @@ func TestQueryJobWithResult(t *testing.T) {
 
 	dglogger.Infof(ctx, "resp: %v", utils.MustConvertBeanToJsonString(resp))
 }
+
+func TestModifyJobGroup(t *testing.T) {
+	initClient()
+	ctx := &dgctx.DgContext{TraceId: "123"}
+
+	err := dgob.ModifyJobGroup(ctx, &dgob.ModifyJobGroupRequest{
+		InstanceId:     os.Getenv("INSTANCE_ID"),
+		JobGroupId:     os.Getenv("JOB_GROUP_ID"),
+		JobGroupStatus: "Draft",
+		MinConcurrency: 1,
+	})
+	if err != nil {
+		panic(err)
+	}
+}
