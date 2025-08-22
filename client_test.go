@@ -2,14 +2,15 @@ package dgob_test
 
 import (
 	"fmt"
+	"os"
+	"testing"
+	"time"
+
 	dgctx "github.com/darwinOrg/go-common/context"
 	"github.com/darwinOrg/go-common/model"
 	"github.com/darwinOrg/go-common/utils"
 	dglogger "github.com/darwinOrg/go-logger"
 	dgob "github.com/darwinOrg/go-outbound"
-	"os"
-	"testing"
-	"time"
 )
 
 func initClient() {
@@ -23,9 +24,24 @@ func initClient() {
 	}
 }
 
+func TestQueryScript(t *testing.T) {
+	initClient()
+	ctx := dgctx.SimpleDgContext()
+
+	resp, err := dgob.QueryScript(ctx, &dgob.QueryScriptRequest{
+		InstanceId: os.Getenv("INSTANCE_ID"),
+		ScriptId:   os.Getenv("SCRIPT_ID"),
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	dglogger.Infof(ctx, "resp: %s", utils.MustConvertBeanToJsonStringPretty(resp))
+}
+
 func TestCreateJobGroup(t *testing.T) {
 	initClient()
-	ctx := &dgctx.DgContext{TraceId: "123"}
+	ctx := dgctx.SimpleDgContext()
 
 	jobGroupId, err := dgob.CreateJobGroup(ctx, &dgob.CreateJobGroupRequest{
 		InstanceId:   os.Getenv("INSTANCE_ID"),
@@ -39,9 +55,53 @@ func TestCreateJobGroup(t *testing.T) {
 	dglogger.Infof(ctx, "jobGroupId: %s", jobGroupId)
 }
 
+func TestModifyJobGroup(t *testing.T) {
+	initClient()
+	ctx := dgctx.SimpleDgContext()
+
+	err := dgob.ModifyJobGroup(ctx, &dgob.ModifyJobGroupRequest{
+		InstanceId:     os.Getenv("INSTANCE_ID"),
+		JobGroupId:     os.Getenv("JOB_GROUP_ID"),
+		JobGroupName:   "面试通知_不带岗位v1",
+		JobGroupStatus: "Draft",
+		MinConcurrency: 1,
+	})
+	if err != nil {
+		panic(err)
+	}
+}
+
+func TestQueryJobGroup(t *testing.T) {
+	initClient()
+	ctx := dgctx.SimpleDgContext()
+
+	resp, err := dgob.QueryJobGroup(ctx, &dgob.QueryJobGroupRequest{
+		InstanceId: os.Getenv("INSTANCE_ID"),
+		JobGroupId: os.Getenv("JOB_GROUP_ID"),
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	dglogger.Infof(ctx, "outbound query job group resp: %s", utils.MustConvertBeanToJsonStringPretty(resp))
+}
+
+func TestDeleteJobGroup(t *testing.T) {
+	initClient()
+	ctx := dgctx.SimpleDgContext()
+
+	err := dgob.DeleteJobGroup(ctx, &dgob.QueryJobGroupRequest{
+		InstanceId: os.Getenv("INSTANCE_ID"),
+		JobGroupId: os.Getenv("JOB_GROUP_ID"),
+	})
+	if err != nil {
+		panic(err)
+	}
+}
+
 func TestAssignJobs(t *testing.T) {
 	initClient()
-	ctx := &dgctx.DgContext{TraceId: "123"}
+	ctx := dgctx.SimpleDgContext()
 
 	jobIds, err := dgob.AssignJobs(ctx, &dgob.AssignJobsRequest{
 		InstanceId: os.Getenv("INSTANCE_ID"),
@@ -81,7 +141,7 @@ func TestAssignJobs(t *testing.T) {
 
 func TestQueryJobWithResult(t *testing.T) {
 	initClient()
-	ctx := &dgctx.DgContext{TraceId: "123"}
+	ctx := dgctx.SimpleDgContext()
 
 	resp, err := dgob.QueryJobWithResult(ctx, &dgob.QueryJobWithResultRequest{
 		InstanceId: os.Getenv("INSTANCE_ID"),
@@ -93,19 +153,4 @@ func TestQueryJobWithResult(t *testing.T) {
 	}
 
 	dglogger.Infof(ctx, "resp: %v", utils.MustConvertBeanToJsonString(resp))
-}
-
-func TestModifyJobGroup(t *testing.T) {
-	initClient()
-	ctx := &dgctx.DgContext{TraceId: "123"}
-
-	err := dgob.ModifyJobGroup(ctx, &dgob.ModifyJobGroupRequest{
-		InstanceId:     os.Getenv("INSTANCE_ID"),
-		JobGroupId:     os.Getenv("JOB_GROUP_ID"),
-		JobGroupStatus: "Draft",
-		MinConcurrency: 1,
-	})
-	if err != nil {
-		panic(err)
-	}
 }

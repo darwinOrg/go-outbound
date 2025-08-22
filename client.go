@@ -3,6 +3,9 @@ package dgob
 import (
 	"encoding/json"
 	"errors"
+	"strings"
+	"time"
+
 	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
 	outboundbot20191226 "github.com/alibabacloud-go/outboundbot-20191226/client"
 	"github.com/alibabacloud-go/tea/tea"
@@ -12,14 +15,17 @@ import (
 	"github.com/darwinOrg/go-common/model"
 	"github.com/darwinOrg/go-common/utils"
 	dglogger "github.com/darwinOrg/go-logger"
-	"strings"
-	"time"
 )
 
 type OutBoundConfig struct {
 	AccessKeyId     string
 	AccessKeySecret string
 	Endpoint        string
+}
+
+type QueryScriptRequest struct {
+	InstanceId string
+	ScriptId   string
 }
 
 type CreateJobGroupRequest struct {
@@ -31,8 +37,14 @@ type CreateJobGroupRequest struct {
 type ModifyJobGroupRequest struct {
 	InstanceId     string
 	JobGroupId     string
+	JobGroupName   string
 	JobGroupStatus string
 	MinConcurrency int64
+}
+
+type QueryJobGroupRequest struct {
+	InstanceId string
+	JobGroupId string
 }
 
 type AssignJobsRequest struct {
@@ -91,6 +103,20 @@ func InitClient(cfg *OutBoundConfig) error {
 	return err
 }
 
+func QueryScript(ctx *dgctx.DgContext, req *QueryScriptRequest) (*outboundbot20191226.DescribeScriptResponse, error) {
+	resp, err := obClient.DescribeScript(&outboundbot20191226.DescribeScriptRequest{
+		InstanceId: tea.String(req.InstanceId),
+		ScriptId:   tea.String(req.ScriptId),
+	})
+	if err != nil {
+		recommend := extractRecommend(err)
+		dglogger.Errorf(ctx, "outbound query script error | request: %+v | err: %v | recommend: %s", req, err, recommend)
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 func CreateJobGroup(ctx *dgctx.DgContext, req *CreateJobGroupRequest) (string, error) {
 	resp, err := obClient.CreateJobGroup(&outboundbot20191226.CreateJobGroupRequest{
 		InstanceId:   tea.String(req.InstanceId),
@@ -131,7 +157,7 @@ func ModifyJobGroup(ctx *dgctx.DgContext, req *ModifyJobGroupRequest) error {
 		JobGroupId:         resp1.Body.JobGroup.JobGroupId,
 		JobGroupStatus:     tea.String(req.JobGroupStatus),
 		MinConcurrency:     tea.Int64(req.MinConcurrency),
-		Name:               resp1.Body.JobGroup.JobGroupName,
+		Name:               tea.String(req.JobGroupName),
 		Priority:           resp1.Body.JobGroup.Priority,
 		RecallStrategyJson: tea.String(utils.MustConvertBeanToJsonString(resp1.Body.JobGroup.RecallStrategy)),
 		RingingDuration:    resp1.Body.JobGroup.RingingDuration,
@@ -151,6 +177,34 @@ func ModifyJobGroup(ctx *dgctx.DgContext, req *ModifyJobGroupRequest) error {
 	if *resp2.StatusCode != 200 {
 		dglogger.Errorf(ctx, "outbound create job group error | request: %+v | response: %+v", req, resp2)
 		return dgerr.NewDgError(int(*resp2.StatusCode), *resp2.Body.Message)
+	}
+
+	return nil
+}
+
+func QueryJobGroup(ctx *dgctx.DgContext, req *QueryJobGroupRequest) (*outboundbot20191226.DescribeJobGroupResponse, error) {
+	resp, err := obClient.DescribeJobGroup(&outboundbot20191226.DescribeJobGroupRequest{
+		InstanceId: tea.String(req.InstanceId),
+		JobGroupId: tea.String(req.JobGroupId),
+	})
+	if err != nil {
+		recommend := extractRecommend(err)
+		dglogger.Errorf(ctx, "outbound query job group error | request: %+v | err: %v | recommend: %s", req, err, recommend)
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func DeleteJobGroup(ctx *dgctx.DgContext, req *QueryJobGroupRequest) error {
+	_, err := obClient.DeleteJobGroup(&outboundbot20191226.DeleteJobGroupRequest{
+		InstanceId: tea.String(req.InstanceId),
+		JobGroupId: tea.String(req.JobGroupId),
+	})
+	if err != nil {
+		recommend := extractRecommend(err)
+		dglogger.Errorf(ctx, "outbound delete job group error | request: %+v | err: %v | recommend: %s", req, err, recommend)
+		return err
 	}
 
 	return nil
